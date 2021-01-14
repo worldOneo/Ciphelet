@@ -2,8 +2,8 @@ package database
 
 import "github.com/gocql/gocql"
 
-//CreateConnection creates a connection based on the credentieals, the keyspace and the addresses
-func CreateConnection(username, password, keyspace string, addresses []string) (*gocql.Session, error) {
+//CreateConnection creates a connection based on the credentials, the keyspace and the addresses
+func CreateConnection(username, password, keyspace string, addresses ...string) (*gocql.Session, error) {
 	cluster := gocql.NewCluster(addresses...)
 	cluster.Authenticator = gocql.PasswordAuthenticator{
 		Username: username,

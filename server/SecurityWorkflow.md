@@ -64,7 +64,9 @@ Actions are transmitted as JSON-Object over the session connection
 the actions are:
 
 ## register
-`parameter: `
+`parameter: password, key`
+`response: humanID, userID`
+The clients sends his password and publickey to the server 
 
 ## login
 `parameter: humanid, password`  
@@ -115,10 +117,10 @@ chatfetch returns every humanid the client has chatted with.
 ## user_id (HumanID -> UserID)
 This table maps the Human-Readable ids to the Snowflakes of the user
 ```SQL
-CREATE TABLE user_id (
-    human_id text,
+CREATE TABLE user (
     user_id bigint,
-    PRIMARY KEY (user_id, human_id)
+    human_id text,
+    PRIMARY KEY (user_id)
 );
 ```
 
@@ -127,8 +129,10 @@ This table stores the hashes of the users.
 ```SQL
 CREATE TABLE user_credentials (
     user_id bigint,
+    human_id text,
     pw_hash text,
-    PRIMARY KEY (user_id)
+    public_key text,
+    PRIMARY KEY (human_id)
 );
 ```
 
@@ -140,19 +144,29 @@ CREATE TABLE chat_keys (
     user_id bigint,
     key_id bigint,
     chat_key text,
-    PRIMARY KEY(chat_id, user_id, key_id)
+    PRIMARY KEY((chat_id, user_id), key_id)
 );
 ```
 
 ## chat_messages
 This table stores the messages written.
 ```SQL
-CREATE TABLE messages (
+CREATE TABLE chat_messages (
     chat_id bigint,
     bucket int,
     message_id bigint,
     author_id bigint,
     message text,
     PRIMARY KEY((chat_id, bucket), message_id)
+);
+```
+
+## chats
+This table stores who is in which chat
+```SQL
+CREATE TABLE chats (
+    user_id bigint,
+    chat_id bigint,
+    PRIMARY KEY(user_id, chat_id)
 );
 ```

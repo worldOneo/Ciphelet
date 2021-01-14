@@ -4,11 +4,10 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/worldOneo/messenger/authenticator"
-
-	"github.com/worldOneo/messenger/snowflake"
-
 	"github.com/gorilla/websocket"
+	"github.com/worldOneo/Ciphelet/authenticator"
+	"github.com/worldOneo/Ciphelet/encryption"
+	"github.com/worldOneo/Ciphelet/snowflake"
 )
 
 // ActionType types of actions defined by string
@@ -16,15 +15,16 @@ type ActionType string
 
 // A definition of action types
 const (
+	RegisterAction  ActionType = "register"
 	LoginAction     ActionType = "login"
-	ChallengeAction ActionType = "challene"
+	ChallengeAction ActionType = "challenge"
 )
 
 // Server the open interface for applications
 type Server struct {
 	upgrader      *websocket.Upgrader
 	authenticator *authenticator.Authenticator
-	sessions      map[string]*Session
+	sessions      map[snowflake.Snowflake]*Session
 }
 
 // Session has a websocket and information about the connected user
@@ -33,32 +33,42 @@ type Session struct {
 	UserID     snowflake.Snowflake
 	Challenge  string
 	Challenged bool
+	Closed     bool
 }
 
 type humanIdentified struct {
-	HumanID string `json:"humanid"`
+	HumanID string `json:"humanid,omitempty"`
+}
+
+type flaked struct {
+	User snowflake.Snowflake `json:"userid,omitempty"`
 }
 
 type loginAction struct {
 	humanIdentified
-	Password string `json:"password"`
+	Password string `json:"password,omitempty"`
 }
 
 type challengeAction struct {
-	Token string `json:"token"`
+	Token string `json:"token,omitempty"`
 }
 
 type publickeyAction struct {
-	humanIdentified
-	Key string `json:"key"`
+	flaked
+	Key string `json:"key,omitempty"`
+}
+
+type registerAction struct {
+	Password string `json:"password,omitempty"`
+	Key      string `json:"key,omitempty"`
 }
 
 type genericAction struct {
-	Action ActionType `json:"action"`
-	humanIdentified
-	challengeAction
-	publickeyAction
-	loginAction
+	Action          ActionType       `json:"action"`
+	ChallengeAction *challengeAction `json:",omitempty"`
+	PublickeyAction *publickeyAction `json:",omitempty"`
+	LoginAction     *loginAction     `json:",omitempty"`
+	RegisterAction  *registerAction  `json:",omitempty"`
 }
 
 // NewServer creates a new Server
@@ -68,39 +78,129 @@ func NewServer(auth *authenticator.Authenticator) *Server {
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
 		},
-		sessions:      make(map[string]*Session),
+		sessions:      make(map[snowflake.Snowflake]*Session),
 		authenticator: auth,
 	}
 }
 
-func (s *Server) handler(w http.ResponseWriter, r *http.Request) {
+// Handler the websocket handler to handle the server
+func (s *Server) Handler(w http.ResponseWriter, r *http.Request) {
 	conn, err := s.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	s.addSession(conn)
-}
-
-func (s *Server) addSession(conn *websocket.Conn) {
-	var action genericAction
-	err := conn.ReadJSON(&action)
-	session := Session{
+	session := &Session{
 		Ws:         conn,
 		Challenge:  authenticator.GenerateHumanID(),
 		Challenged: false,
 		UserID:     0,
+		Closed:     false,
 	}
+	conn.SetCloseHandler(func(code int, text string) error {
+		session.Closed = true
+		return nil
+	})
+	s.addSession(session)
+}
 
-	for !session.Challenged {
-		if err != nil || action.Action != LoginAction {
-			if err = conn.WriteJSON(&loginAction{}); err != nil {
-				conn.Close()
+func (s *Server) addSession(sess *Session) {
+	conn := sess.Ws
+	for !sess.Challenged {
+		nextAction, err := getNextAction(conn)
+		requiredPacket := genericAction{}
+		requiredPacket.Action = LoginAction
+		if err != nil || nextAction.Action != LoginAction {
+			if err == nil && nextAction.Action == RegisterAction {
+				register(nextAction.RegisterAction, sess)
+				continue
+			}
+			if websocket.IsCloseError(err, websocket.CloseNoStatusReceived) {
+				log.Print("Closed!")
 				return
 			}
+			log.Printf("Didnt send login packet \"%v\"", err)
+			if sess.Closed {
+				return
+			}
+			conn.WriteJSON(requiredPacket)
 			continue
 		}
-		userID, err := s.authenticator.GetUser(action.HumanID)
-	}
 
+		lAction := nextAction.LoginAction
+		cUser, err := s.authenticator.GetUserKey(lAction.HumanID)
+		if err != nil {
+			log.Printf("Couldn't find user \"%v\"", err)
+			if isSessionClosed(err, sess) {
+				return
+			}
+			conn.WriteJSON(requiredPacket)
+			continue
+		}
+		pubKey, err := encryption.GetPublicKey(cUser.Publickey)
+
+		if err != nil {
+			log.Printf("Couldn't find user key %v", err)
+			if sess.Closed {
+				return
+			}
+			conn.WriteJSON(requiredPacket)
+		}
+		challenge, err := encryption.Encrypt(pubKey, []byte(sess.Challenge))
+		if err != nil {
+			log.Printf("Couldn't encrypt %v", err)
+			if sess.Closed {
+				return
+			}
+			conn.WriteJSON(requiredPacket)
+		}
+		cAction := challengeAction{}
+		cAction.Token = string(challenge)
+		conn.WriteJSON(genericAction{Action: ChallengeAction, ChallengeAction: &cAction})
+	}
+}
+
+// getNextAction awaits the next action from a socket
+func getNextAction(conn *websocket.Conn) (genericAction, error) {
+	action := createGenericAction()
+	err := conn.ReadJSON(&action)
+	return action, err
+}
+
+func isSessionClosed(err error, sess *Session) bool {
+	return websocket.IsCloseError(err, 1000, 1001, 1002, 1003,
+		1005, 1006, 1007, 1008, 1009,
+		1010, 1011, 1012, 1013, 1015) || sess.Closed
+}
+
+func register(rAction *registerAction, sess *Session) {
+	requiredPacket := genericAction{}
+	requiredPacket.Action = LoginAction
+	key, err := encryption.GetPublicKey(rAction.Key)
+	if err != nil {
+		sess.Ws.WriteJSON(requiredPacket)
+		return
+	}
+	userChallenge, err := encryption.B64Encrypt(key, []byte(sess.Challenge))
+	if err != nil {
+		log.Printf("Unable to encrypt challenge, %v", err)
+		sess.Ws.WriteJSON(requiredPacket)
+		return
+	}
+	sess.Ws.WriteJSON(genericAction{
+		Action: ChallengeAction,
+		ChallengeAction: &challengeAction{
+			Token: userChallenge,
+		},
+	})
+
+}
+
+func createGenericAction() genericAction {
+	return genericAction{
+		ChallengeAction: &challengeAction{},
+		LoginAction:     &loginAction{},
+		PublickeyAction: &publickeyAction{},
+		RegisterAction:  &registerAction{},
+	}
 }

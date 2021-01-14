@@ -1,4 +1,4 @@
-module github.com/worldOneo/messenger
+module github.com/worldOneo/Ciphelet
 
 go 1.15
 

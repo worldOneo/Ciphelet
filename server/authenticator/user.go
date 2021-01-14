@@ -2,11 +2,10 @@ package authenticator
 
 import (
 	"errors"
-	"log"
 	"regexp"
 
 	"github.com/gocql/gocql"
-	"github.com/worldOneo/messenger/snowflake"
+	"github.com/worldOneo/Ciphelet/snowflake"
 )
 
 // ErrUserNotFound defines that the user wasnt found in the database
@@ -29,8 +28,14 @@ type UserID struct {
 
 // CredentialUser contains authentication data of a user
 type CredentialUser struct {
-	Snowflake snowflake.Snowflake `json:"snowflake"`
-	Password  string              `json:"password"`
+	KeyedUser
+	Password string `json:"password"`
+}
+
+// KeyedUser contains the publickey of a user
+type KeyedUser struct {
+	UserID
+	Publickey string `json:"publickey"`
 }
 
 // Authenticator has the ability to query user data from the database
@@ -38,53 +43,32 @@ type Authenticator struct {
 	CQLSession *gocql.Session
 }
 
-//GetUser returns the userid from the db based on the 8 Digit id
-// a userID is made up of any case 8 letters except I,L,O to avoid confusion between I and L and 0 and O
-func (a *Authenticator) GetUser(humanID string) (UserID, error) {
-	b := HumanIDLayout.Match([]byte(humanID))
-
-	if !b {
-		return UserID{}, ErrInvalidID
+// GetUserKey queries the user and the password and the publickey.
+func (a *Authenticator) GetUserKey(humanID string) (*CredentialUser, error) {
+	if !IsHumanID(humanID) {
+		return nil, ErrInvalidID
 	}
-	query := a.CQLSession.Query("SELECT user_id FROM user_id WHERE human_id = ?;", humanID)
+
+	query := a.CQLSession.Query("SELECT public_key, pw_hash, user_id FROM user_credentials WHERE human_id = ?;", humanID)
 	err := query.Exec()
 	if err != nil {
-		return UserID{}, err
+		return nil, err
 	}
-	var userIntID int64
+	cUser := CredentialUser{}
 	iter := query.Iter()
-	if !iter.Scan(&userIntID) {
-		return UserID{}, ErrUserNotFound
+	if !iter.Scan(&cUser.Publickey, &cUser.Password, &cUser.UserID) {
+		return nil, ErrUserNotFound
 	}
-	return UserID{
-		HumanID:   humanID,
-		Snowflake: snowflake.Snowflake(userIntID),
-	}, nil
+	cUser.HumanID = humanID
+	return &cUser, nil
 }
 
-// VerifyUser queries the user and the password and compares them.
-// If the passwords (hash) match the UserID (HumanID + Snowflake) is returned
-// an error otherwise
-func (a *Authenticator) VerifyUser(humanID string, password string) (UserID, error) {
-	uID, err := a.GetUser(humanID)
-	if err != nil {
-		return UserID{}, err
-	}
-	query := a.CQLSession.Query("SELECT pw_hash FROM user_credentials WHERE user_id = ?;", uID.Snowflake)
-	err = query.Exec()
-	if err != nil {
-		return UserID{}, err
-	}
-	var hash string
-	iter := query.Iter()
-	if !iter.Scan(&hash) {
-		log.Printf("User %v found as user but with no credentials", humanID)
-		return UserID{}, ErrUserNotFound
-	}
+// IsHumanID test a humanID string for its layout
+func IsHumanID(humanID string) bool {
+	return HumanIDLayout.Match([]byte(humanID))
+}
 
-	match, err := ComparePassword(password, hash)
-	if match {
-		return uID, nil
-	}
-	return UserID{}, ErrCredentialsInvalid
+// RegisterUser registers a user into the server
+func RegisterUser(password string, publickey string) {
+
 }
