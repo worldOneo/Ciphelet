@@ -41,6 +41,7 @@ type KeyedUser struct {
 // Authenticator has the ability to query user data from the database
 type Authenticator struct {
 	CQLSession *gocql.Session
+	Generator  *snowflake.Generator
 }
 
 // GetUserKey queries the user and the password and the publickey.
@@ -69,6 +70,26 @@ func IsHumanID(humanID string) bool {
 }
 
 // RegisterUser registers a user into the server
-func RegisterUser(password string, publickey string) {
-
+func (a *Authenticator) RegisterUser(password string, publickey string) (userID *UserID, err error) {
+	humanID := GenerateHumanID()
+	_, err = a.GetUserKey(humanID)
+	for err == nil {
+		_, err = a.GetUserKey(humanID)
+		humanID = GenerateHumanID() // Ensure id is free
+	}
+	uID := a.Generator.GenSnowflake()
+	hash, err := GeneratePassword(DefaultPasswordConfig, password)
+	if err != nil {
+		return nil, err
+	}
+	query := a.CQLSession.Query("INSERT INTO user_credentials(user_id, human_id, pw_hash, public_key) values(?, ?, ?, ?);",
+		uID, humanID, hash, publickey)
+	err = query.Exec()
+	if err != nil {
+		return nil, err
+	}
+	return &UserID{
+		HumanID:   humanID,
+		Snowflake: uID,
+	}, nil
 }

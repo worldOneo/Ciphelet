@@ -64,7 +64,7 @@ Actions are transmitted as JSON-Object over the session connection
 the actions are:
 
 ## register
-`parameter: password, key`
+`parameter: password, key`  
 `response: humanID, userID`
 The clients sends his password and publickey to the server 
 

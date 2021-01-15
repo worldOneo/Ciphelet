@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/worldOneo/Ciphelet/snowflake"
+
 	"github.com/gorilla/mux"
 	"github.com/worldOneo/Ciphelet/authenticator"
 	"github.com/worldOneo/Ciphelet/database"
@@ -20,6 +22,7 @@ func main() {
 	}
 	server := network.NewServer(&authenticator.Authenticator{
 		CQLSession: dbconn,
+		Generator:  snowflake.NewGenerator(0),
 	})
 
 	r := mux.NewRouter()

@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
+	"math/big"
 )
 
 // GetPublicKey creates a publickey based of an b64 encoded string
@@ -34,4 +35,21 @@ func B64Encrypt(key *rsa.PublicKey, msg []byte) (string, error) {
 		return "", err
 	}
 	return base64.StdEncoding.EncodeToString(bs), nil
+}
+
+// EncodeKey encodes the keys N (Not compatible with GetPublicKey)
+func EncodeKey(key *rsa.PublicKey) string {
+	return base64.StdEncoding.EncodeToString(key.N.Bytes())
+}
+
+// DecodeKey encodes the keys N (Not compatible with GetPublicKey)
+func DecodeKey(key string) (*rsa.PublicKey, error) {
+	kBytes, err := base64.StdEncoding.DecodeString(key)
+	if err != nil {
+		return nil, err
+	}
+	return &rsa.PublicKey{
+		E: 65536,
+		N: big.NewInt(0).SetBytes(kBytes),
+	}, nil
 }

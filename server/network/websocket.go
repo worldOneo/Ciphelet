@@ -59,6 +59,8 @@ type publickeyAction struct {
 }
 
 type registerAction struct {
+	humanIdentified
+	flaked
 	Password string `json:"password,omitempty"`
 	Key      string `json:"key,omitempty"`
 }
@@ -113,7 +115,7 @@ func (s *Server) addSession(sess *Session) {
 		requiredPacket.Action = LoginAction
 		if err != nil || nextAction.Action != LoginAction {
 			if err == nil && nextAction.Action == RegisterAction {
-				register(nextAction.RegisterAction, sess)
+				s.register(nextAction.RegisterAction, sess)
 				continue
 			}
 			if isSessionClosed(err, sess) {
@@ -175,9 +177,10 @@ func isSessionClosed(err error, sess *Session) bool {
 		1010, 1011, 1012, 1013, 1015) || sess.Closed
 }
 
-func register(rAction *registerAction, sess *Session) {
+func (s *Server) register(rAction *registerAction, sess *Session) {
 	requiredPacket := genericAction{}
 	requiredPacket.Action = LoginAction
+	password := rAction.Password
 	key, err := encryption.GetPublicKey(rAction.Key)
 	if err != nil {
 		log.Printf("Invalid public key: \"%v\"", err)
@@ -203,6 +206,17 @@ func register(rAction *registerAction, sess *Session) {
 	}
 	if action.ChallengeAction.Token == sess.Challenge {
 		log.Print("CLIENT VALID REGISTER HANDSHAKE!!!!")
+		sess.Challenged = true
+		sKey := encryption.EncodeKey(key)
+		userid, err := s.authenticator.RegisterUser(password, sKey)
+		if err != nil {
+			sess.Ws.WriteJSON(requiredPacket)
+			return
+		}
+		requiredPacket.Action = RegisterAction
+		requiredPacket.RegisterAction = &registerAction{}
+		requiredPacket.RegisterAction.HumanID = userid.HumanID
+		requiredPacket.RegisterAction.User = userid.Snowflake
 		sess.Ws.WriteJSON(requiredPacket)
 		return
 	}
