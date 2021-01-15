@@ -65,10 +65,10 @@ type registerAction struct {
 
 type genericAction struct {
 	Action          ActionType       `json:"action"`
-	ChallengeAction *challengeAction `json:",omitempty"`
-	PublickeyAction *publickeyAction `json:",omitempty"`
-	LoginAction     *loginAction     `json:",omitempty"`
-	RegisterAction  *registerAction  `json:",omitempty"`
+	ChallengeAction *challengeAction `json:"challengeAction,omitempty"`
+	PublickeyAction *publickeyAction `json:"publickeyAction,omitempty"`
+	LoginAction     *loginAction     `json:"loginAction,omitempty"`
+	RegisterAction  *registerAction  `json:"registerAction,omitempty"`
 }
 
 // NewServer creates a new Server
@@ -85,6 +85,7 @@ func NewServer(auth *authenticator.Authenticator) *Server {
 
 // Handler the websocket handler to handle the server
 func (s *Server) Handler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Connected!")
 	conn, err := s.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
@@ -115,11 +116,12 @@ func (s *Server) addSession(sess *Session) {
 				register(nextAction.RegisterAction, sess)
 				continue
 			}
-			if websocket.IsCloseError(err, websocket.CloseNoStatusReceived) {
+			if isSessionClosed(err, sess) {
 				log.Print("Closed!")
+				sess.Ws.Close()
 				return
 			}
-			log.Printf("Didnt send login packet \"%v\"", err)
+			log.Printf("Didnt send login packet \"%v\" Acrion: \"%s\"", err, nextAction.Action)
 			if sess.Closed {
 				return
 			}
@@ -178,6 +180,7 @@ func register(rAction *registerAction, sess *Session) {
 	requiredPacket.Action = LoginAction
 	key, err := encryption.GetPublicKey(rAction.Key)
 	if err != nil {
+		log.Printf("Invalid public key: \"%v\"", err)
 		sess.Ws.WriteJSON(requiredPacket)
 		return
 	}
@@ -193,7 +196,16 @@ func register(rAction *registerAction, sess *Session) {
 			Token: userChallenge,
 		},
 	})
-
+	action, err := getNextAction(sess.Ws)
+	if action.Action != ChallengeAction || err != nil {
+		sess.Ws.WriteJSON(requiredPacket)
+		return
+	}
+	if action.ChallengeAction.Token == sess.Challenge {
+		log.Print("CLIENT VALID REGISTER HANDSHAKE!!!!")
+		sess.Ws.WriteJSON(requiredPacket)
+		return
+	}
 }
 
 func createGenericAction() genericAction {

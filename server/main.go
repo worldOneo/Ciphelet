@@ -26,5 +26,5 @@ func main() {
 	r.HandleFunc("/ws", server.Handler)
 
 	log.Println("Starting on localhost:8080...")
-	http.ListenAndServe("localhost:8080", r)
+	http.ListenAndServe(":8080", r)
 }
