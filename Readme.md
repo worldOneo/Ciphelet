@@ -1,4 +1,4 @@
-# Ciphelete
+# Ciphelet
 Ciphelet is an [E2EE](https://en.wikipedia.org/wiki/End-to-end_encryption) Chat client which aims for a secure chat and wants to offer the ability of "forgetting" you in under 15 Seconds, deleting everything you wrote.
 
 ## Goals
