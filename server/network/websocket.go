@@ -6,7 +6,6 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/worldOneo/Ciphelet/authenticator"
-	"github.com/worldOneo/Ciphelet/encryption"
 	"github.com/worldOneo/Ciphelet/snowflake"
 )
 
@@ -107,63 +106,6 @@ func (s *Server) Handler(w http.ResponseWriter, r *http.Request) {
 	s.addSession(session)
 }
 
-func (s *Server) addSession(sess *Session) {
-	conn := sess.Ws
-	for !sess.Challenged {
-		nextAction, err := getNextAction(conn)
-		requiredPacket := genericAction{}
-		requiredPacket.Action = LoginAction
-		if err != nil || nextAction.Action != LoginAction {
-			if err == nil && nextAction.Action == RegisterAction {
-				s.register(nextAction.RegisterAction, sess)
-				continue
-			}
-			if isSessionClosed(err, sess) {
-				log.Print("Closed!")
-				sess.Ws.Close()
-				return
-			}
-			log.Printf("Didnt send login packet \"%v\" Acrion: \"%s\"", err, nextAction.Action)
-			if sess.Closed {
-				return
-			}
-			conn.WriteJSON(requiredPacket)
-			continue
-		}
-
-		lAction := nextAction.LoginAction
-		cUser, err := s.authenticator.GetUserKey(lAction.HumanID)
-		if err != nil {
-			log.Printf("Couldn't find user \"%v\"", err)
-			if isSessionClosed(err, sess) {
-				return
-			}
-			conn.WriteJSON(requiredPacket)
-			continue
-		}
-		pubKey, err := encryption.GetPublicKey(cUser.Publickey)
-
-		if err != nil {
-			log.Printf("Couldn't find user key %v", err)
-			if sess.Closed {
-				return
-			}
-			conn.WriteJSON(requiredPacket)
-		}
-		challenge, err := encryption.Encrypt(pubKey, []byte(sess.Challenge))
-		if err != nil {
-			log.Printf("Couldn't encrypt %v", err)
-			if sess.Closed {
-				return
-			}
-			conn.WriteJSON(requiredPacket)
-		}
-		cAction := challengeAction{}
-		cAction.Token = string(challenge)
-		conn.WriteJSON(genericAction{Action: ChallengeAction, ChallengeAction: &cAction})
-	}
-}
-
 // getNextAction awaits the next action from a socket
 func getNextAction(conn *websocket.Conn) (genericAction, error) {
 	action := createGenericAction()
@@ -175,51 +117,6 @@ func isSessionClosed(err error, sess *Session) bool {
 	return websocket.IsCloseError(err, 1000, 1001, 1002, 1003,
 		1005, 1006, 1007, 1008, 1009,
 		1010, 1011, 1012, 1013, 1015) || sess.Closed
-}
-
-func (s *Server) register(rAction *registerAction, sess *Session) {
-	requiredPacket := genericAction{}
-	requiredPacket.Action = LoginAction
-	password := rAction.Password
-	key, err := encryption.GetPublicKey(rAction.Key)
-	if err != nil {
-		log.Printf("Invalid public key: \"%v\"", err)
-		sess.Ws.WriteJSON(requiredPacket)
-		return
-	}
-	userChallenge, err := encryption.B64Encrypt(key, []byte(sess.Challenge))
-	if err != nil {
-		log.Printf("Unable to encrypt challenge, %v", err)
-		sess.Ws.WriteJSON(requiredPacket)
-		return
-	}
-	sess.Ws.WriteJSON(genericAction{
-		Action: ChallengeAction,
-		ChallengeAction: &challengeAction{
-			Token: userChallenge,
-		},
-	})
-	action, err := getNextAction(sess.Ws)
-	if action.Action != ChallengeAction || err != nil {
-		sess.Ws.WriteJSON(requiredPacket)
-		return
-	}
-	if action.ChallengeAction.Token == sess.Challenge {
-		log.Print("CLIENT VALID REGISTER HANDSHAKE!!!!")
-		sess.Challenged = true
-		sKey := encryption.EncodeKey(key)
-		userid, err := s.authenticator.RegisterUser(password, sKey)
-		if err != nil {
-			sess.Ws.WriteJSON(requiredPacket)
-			return
-		}
-		requiredPacket.Action = RegisterAction
-		requiredPacket.RegisterAction = &registerAction{}
-		requiredPacket.RegisterAction.HumanID = userid.HumanID
-		requiredPacket.RegisterAction.User = userid.Snowflake
-		sess.Ws.WriteJSON(requiredPacket)
-		return
-	}
 }
 
 func createGenericAction() genericAction {

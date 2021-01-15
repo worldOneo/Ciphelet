@@ -56,10 +56,12 @@ func (a *Authenticator) GetUserKey(humanID string) (*CredentialUser, error) {
 		return nil, err
 	}
 	cUser := CredentialUser{}
+
 	iter := query.Iter()
-	if !iter.Scan(&cUser.Publickey, &cUser.Password, &cUser.UserID) {
+	if !iter.Scan(&cUser.Publickey, &cUser.Password, &cUser.Snowflake) {
 		return nil, ErrUserNotFound
 	}
+	iter.Close()
 	cUser.HumanID = humanID
 	return &cUser, nil
 }

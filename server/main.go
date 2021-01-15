@@ -6,12 +6,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/worldOneo/Ciphelet/snowflake"
-
 	"github.com/gorilla/mux"
 	"github.com/worldOneo/Ciphelet/authenticator"
 	"github.com/worldOneo/Ciphelet/database"
 	"github.com/worldOneo/Ciphelet/network"
+	"github.com/worldOneo/Ciphelet/snowflake"
 )
 
 func main() {

@@ -1,15 +1,21 @@
 package com.github.worldoneo.ciphelet;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Base64;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.github.worldoneo.ciphelet.connector.CipheletAPI;
 import com.github.worldoneo.ciphelet.connector.Connector;
+import com.github.worldoneo.ciphelet.connector.ConnectorThread;
 import com.github.worldoneo.ciphelet.connector.RegistrationService;
-import com.github.worldoneo.ciphelet.connector.action.RegisterAction;
+import com.github.worldoneo.ciphelet.connector.encryption.EncryptionUtility;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.PrivateKey;
+import java.util.concurrent.ExecutionException;
 
 public class MainActivity extends AppCompatActivity {
     public static MainActivity instance;
@@ -20,17 +26,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        try {
-            final URI u = new URI("ws://192.168.178.75:8080/ws");
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    Connector connector = new Connector(u);
-                    RegistrationService r = new RegistrationService(connector);
-                    r.register("test");
-                }
-            }).start();
 
+        try {
+            new ConnectorThread(getPreferences(MODE_PRIVATE), new URI(getResources().getString(R.string.server))).start();
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }

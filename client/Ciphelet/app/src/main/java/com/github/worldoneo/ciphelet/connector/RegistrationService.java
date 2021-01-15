@@ -10,6 +10,7 @@ import com.github.worldoneo.ciphelet.connector.api.ChallengeHandler;
 import com.github.worldoneo.ciphelet.connector.encryption.EncryptionUtility;
 
 import java.security.KeyPair;
+import java.security.PrivateKey;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -44,20 +45,18 @@ public class RegistrationService {
         rAction.key = new String(Base64.encode(enced, Base64.DEFAULT)).replace("\n", "");
         genericAction.registerAction = rAction;
         connector.sendAction(genericAction);
-        connector.actionHook(GenericAction.ChallengeAction, new ChallengeHandler(keyPair, connector));
-        connector.actionHook(GenericAction.RegisterAction, new Consumer<GenericAction>() {
-            @Override
-            public void accept(GenericAction genericAction) {
-                cipheletAPI[0] = new CipheletAPI(genericAction.registerAction.humanID, connector, keyPair);
-            }
-        });
-        while (cipheletAPI[0] == null) {
-            try {
-                Thread.sleep(200);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+        try {
+            final PrivateKey privateKey = keyPair.getPrivate();
+            connector.awaitAction(new ChallengeHandler(privateKey, connector));
+            connector.awaitAction(new Consumer<GenericAction>() {
+                @Override
+                public void accept(GenericAction genericAction) {
+                    cipheletAPI[0] = new CipheletAPI(genericAction.registerAction.humanid, connector, privateKey);
+                }
+            });
+            return cipheletAPI[0];
+        } catch (InterruptedException e) {
+            return null;
         }
-        return cipheletAPI[0];
     }
 }
