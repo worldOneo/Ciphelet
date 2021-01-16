@@ -94,25 +94,30 @@ Private chats are groups with only 2 members.
 The group owner encryps the groups key (512bits) with each members publickey and sends them to the server.
 
 ## messagesend _only client->server_
-`parameter: encryptedmessage, userid (reciever)`  
+`parameter: encryptedmessage, chatid (reciever)`  
 The client generates a secure AES-512 bit key and encrypts the message with that key.
 The client than encrypts the AES key with the recievers publickey and sends it of to the server.
 
 ## messagerecieve _only server->client_
-`parameter: message, userid`  
+`parameter: message, chatid`  
 The client recieves this message if it is currently connected and another clients sends a message to the clients HumanID
 
 ## messagefetch
-`parameter: userid, time`  
-`return: []messages{snowflake, encryptedmessage}`  
+`parameter: chatid, time`  
+`return: []messages`  
 If the client wants to fetch a chat based on its humanid it needs to send a messagefetch action.
 The server will return the last 50 messages sent before that time.
 The messages are all encrypted individually and need to be decrypted by the client.
 
 ## chatfetch
-`noparemeter`  
-`return: []userid`  
-chatfetch returns every humanid the client has chatted with.
+`noparmeter`  
+`return: []chatid`  
+chatfetch returns every chatid of the group the client has chatted with.
+
+## groupfetch
+`parameter: chatid`  
+`return: []userid` 
+groupfetch returns every user of a group
 
 # Tables
 
@@ -146,7 +151,7 @@ CREATE TABLE chat_keys (
     user_id bigint,
     key_id bigint,
     chat_key text,
-    PRIMARY KEY((chat_id, user_id), key_id)
+    PRIMARY KEY(chat_id, user_id, key_id)
 );
 ```
 

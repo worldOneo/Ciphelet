@@ -17,6 +17,7 @@ const (
 	RegisterAction  ActionType = "register"
 	LoginAction     ActionType = "login"
 	ChallengeAction ActionType = "challenge"
+	ChatfetchAction ActionType = "chatfetch"
 )
 
 // Server the open interface for applications
@@ -64,12 +65,17 @@ type registerAction struct {
 	Key      string `json:"key,omitempty"`
 }
 
+type chatfetchAction struct {
+	ChatID []snowflake.Snowflake `json:"userid,omitempty"`
+}
+
 type genericAction struct {
 	Action          ActionType       `json:"action"`
 	ChallengeAction *challengeAction `json:"challengeAction,omitempty"`
 	PublickeyAction *publickeyAction `json:"publickeyAction,omitempty"`
 	LoginAction     *loginAction     `json:"loginAction,omitempty"`
 	RegisterAction  *registerAction  `json:"registerAction,omitempty"`
+	ChatfetchAction *chatfetchAction `json:"chatfetchAction,omitempty"`
 }
 
 // NewServer creates a new Server
@@ -101,9 +107,42 @@ func (s *Server) Handler(w http.ResponseWriter, r *http.Request) {
 	}
 	conn.SetCloseHandler(func(code int, text string) error {
 		session.Closed = true
+		if session.Challenged {
+			delete(s.sessions, session.UserID)
+		}
 		return nil
 	})
 	s.addSession(session)
+	if !session.Challenged {
+		log.Printf("Client isnt verified")
+		return
+	}
+	s.sessions[session.UserID] = session
+	for !session.Closed {
+		action, err := getNextAction(session.Ws)
+		if err != nil {
+			log.Printf("Client failed! \"%v\"", err)
+			session.Ws.Close()
+			return
+		}
+		switch action.Action {
+		case ChatfetchAction:
+			response := &genericAction{}
+			response.Action = ChatfetchAction
+			chats, err := s.authenticator.GetChats(session.UserID)
+			if err != nil {
+				log.Printf("Failed fetching the chats: \"%v\"", err)
+				continue
+			}
+			response.ChatfetchAction = &chatfetchAction{
+				ChatID: chats,
+			}
+			session.Ws.WriteJSON(response)
+			break
+		default:
+			log.Print("Recieved action: " + action.Action)
+		}
+	}
 }
 
 // getNextAction awaits the next action from a socket

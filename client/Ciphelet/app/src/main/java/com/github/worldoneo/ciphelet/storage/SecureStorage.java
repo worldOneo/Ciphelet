@@ -12,6 +12,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
 public class SecureStorage {
+
     private final SharedPreferences sharedPreferences;
     private final SecretKey key;
 

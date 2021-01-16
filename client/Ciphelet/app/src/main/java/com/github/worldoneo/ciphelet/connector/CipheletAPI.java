@@ -3,14 +3,18 @@ package com.github.worldoneo.ciphelet.connector;
 import com.github.worldoneo.ciphelet.connector.action.GenericAction;
 import com.github.worldoneo.ciphelet.connector.action.LoginAction;
 import com.github.worldoneo.ciphelet.connector.api.ChallengeHandler;
+import com.github.worldoneo.ciphelet.connector.hooks.ChatfetchHook;
 
 import java.security.PrivateKey;
+
 
 public class CipheletAPI {
     public final PrivateKey privateKey;
     public final String humanID;
     private Connector connector;
     private boolean loggedIn = false;
+    private boolean hooked = false;
+    private long[] chatids;
 
     public CipheletAPI(String humanID, Connector server, PrivateKey privateKey) {
         this.humanID = humanID;
@@ -45,5 +49,19 @@ public class CipheletAPI {
     private void challengeDone() {
         System.out.println("Logged in");
         loggedIn = true;
+    }
+
+    public void hook() {
+        if (hooked) return;
+        hooked = true;
+
+        connector.actionHook(GenericAction.ChatfetchAction, new ChatfetchHook(this));
+        connector.sendAction(new GenericAction(GenericAction.ChatfetchAction));
+
+    }
+
+    public void setChatids(long[] chatids) {
+        System.out.println("Recieved chat ids! : " + chatids);
+        this.chatids = chatids;
     }
 }

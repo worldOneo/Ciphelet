@@ -20,6 +20,7 @@ import java.security.spec.InvalidKeySpecException;
 public class LoginClickListener implements View.OnClickListener {
     @Override
     public void onClick(View v) {
+        System.out.println("Clicked login button");
         MainActivity instance = MainActivity.getInstance();
         View loginInput = instance.findViewById(R.id.loginPasswordInput);
         String password = ((EditText) loginInput).getText().toString();
@@ -28,10 +29,13 @@ public class LoginClickListener implements View.OnClickListener {
             return;
         }
         v.setEnabled(false);
+        System.out.println("Trying");
         try {
             SharedPreferences preferences = instance.getPreferences();
             URI uri = new URI(instance.getStringsxml(R.string.server));
+            System.out.println("Setting up secureStorage");
             SecureStorage secureStorage = new SecureStorage(preferences, EncryptionUtility.getKeyFromPassword(password, SecureStorage.getSalt(preferences)));
+            System.out.println("Desyncing the universe!");
             new ConnectorThread(password, uri, secureStorage).start();
         } catch (URISyntaxException | NoSuchAlgorithmException | InvalidKeySpecException e) {
             e.printStackTrace();

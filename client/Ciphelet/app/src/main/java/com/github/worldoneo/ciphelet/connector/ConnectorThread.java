@@ -5,7 +5,9 @@ import com.github.worldoneo.ciphelet.R;
 import com.github.worldoneo.ciphelet.connector.encryption.EncryptionUtility;
 import com.github.worldoneo.ciphelet.storage.SecureStorage;
 
+import java.net.CacheRequest;
 import java.net.URI;
+import java.net.URISyntaxException;
 
 import lombok.SneakyThrows;
 
@@ -21,11 +23,16 @@ public class ConnectorThread extends Thread {
         this.secureStorage = secureStorage;
     }
 
-
-    @SneakyThrows
     @Override
     public void run() {
-        final URI uri = new URI(MainActivity.getInstance().getStringsxml(R.string.server));
+        System.out.println("Going async!");
+        URI uri = null;
+        try {
+            uri = new URI(MainActivity.getInstance().getStringsxml(R.string.server));
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+
         CipheletAPI cipheletAPI = new CipheletAPI(
                 secureStorage.get("humanid", String.class),
                 new Connector(uri),

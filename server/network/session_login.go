@@ -47,5 +47,8 @@ func (s *Server) addSession(sess *Session) {
 		}
 		log.Printf("User: %v logged in", cUser.HumanID)
 		sess.Challenged = true
+		return
 	}
+	sess.Ws.Close()
+	return
 }
