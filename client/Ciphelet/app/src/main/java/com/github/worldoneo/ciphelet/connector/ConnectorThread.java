@@ -1,43 +1,36 @@
 package com.github.worldoneo.ciphelet.connector;
 
-import android.content.SharedPreferences;
-
+import com.github.worldoneo.ciphelet.MainActivity;
+import com.github.worldoneo.ciphelet.R;
 import com.github.worldoneo.ciphelet.connector.encryption.EncryptionUtility;
+import com.github.worldoneo.ciphelet.storage.SecureStorage;
 
 import java.net.URI;
-import java.security.PrivateKey;
-import java.util.concurrent.ExecutionException;
+
+import lombok.SneakyThrows;
 
 public class ConnectorThread extends Thread {
-    private final SharedPreferences sharedPreferences;
+    private final String password;
     private final URI u;
+    private final SecureStorage secureStorage;
 
-    public ConnectorThread(SharedPreferences sharedPreferences, URI u) {
-        this.sharedPreferences = sharedPreferences;
+
+    public ConnectorThread(String password, URI u, SecureStorage secureStorage) {
+        this.password = password;
         this.u = u;
+        this.secureStorage = secureStorage;
     }
 
 
+    @SneakyThrows
     @Override
     public void run() {
-        final SharedPreferences.Editor editor = sharedPreferences.edit();
-        Connector connector = new Connector(u);
-        RegistrationService r = new RegistrationService(connector);
-        if (!sharedPreferences.contains("privatekey")) {
-            try {
-                CipheletAPI cipheletAPI = r.register("test").get();
-                editor.putString("privatekey", EncryptionUtility.EncodeKey(cipheletAPI.privateKey));
-                System.out.println("Registered as: "+cipheletAPI.humanID);
-                editor.putString("humanid", cipheletAPI.humanID);
-                editor.apply();
-            } catch (ExecutionException | InterruptedException e) {
-                e.printStackTrace();
-            }
-        } else {
-            System.out.println("Found private key: " + sharedPreferences.getString("privatekey", ""));
-            PrivateKey privateKey = EncryptionUtility.DecodeKey(sharedPreferences.getString("privatekey", ""));
-            CipheletAPI cipheletAPI = new CipheletAPI(sharedPreferences.getString("humanid", ""), connector, privateKey);
-            cipheletAPI.login("test");
-        }
+        final URI uri = new URI(MainActivity.getInstance().getStringsxml(R.string.server));
+        CipheletAPI cipheletAPI = new CipheletAPI(
+                secureStorage.get("humanid", String.class),
+                new Connector(uri),
+                EncryptionUtility.DecodeKey(secureStorage.get("privatekey", String.class)));
+        cipheletAPI.login(password);
+        MainActivity.getInstance().loggedIn(cipheletAPI);
     }
 }

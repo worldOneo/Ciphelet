@@ -9,7 +9,6 @@ import java.security.PrivateKey;
 public class CipheletAPI {
     public final PrivateKey privateKey;
     public final String humanID;
-    private long userID;
     private Connector connector;
     private boolean loggedIn = false;
 
@@ -26,6 +25,7 @@ public class CipheletAPI {
         }
         GenericAction genericAction = new GenericAction(GenericAction.LoginAction);
         LoginAction loginAction = new LoginAction();
+        System.out.println("Logging in as: " + this.humanID);
         loginAction.humanid = this.humanID;
         loginAction.password = password;
         genericAction.loginAction = loginAction;
@@ -42,7 +42,7 @@ public class CipheletAPI {
         }
     }
 
-    public void challengeDone() {
+    private void challengeDone() {
         System.out.println("Logged in");
         loggedIn = true;
     }

@@ -10,7 +10,6 @@ import com.github.worldoneo.ciphelet.connector.action.GenericAction;
 import com.github.worldoneo.ciphelet.connector.encryption.EncryptionUtility;
 
 import java.security.GeneralSecurityException;
-import java.security.KeyPair;
 import java.security.PrivateKey;
 
 public class ChallengeHandler implements Consumer<GenericAction> {
@@ -38,7 +37,7 @@ public class ChallengeHandler implements Consumer<GenericAction> {
         try {
             GenericAction response = new GenericAction(GenericAction.ChallengeAction);
             ChallengeAction challengeAction = new ChallengeAction();
-            challengeAction.token = new String(EncryptionUtility.decrypt(
+            challengeAction.token = new String(EncryptionUtility.decryptRSA(
                     Base64.decode(genericAction.challengeAction.token.getBytes(), Base64.DEFAULT),
                     privateKey));
             response.challengeAction = challengeAction;

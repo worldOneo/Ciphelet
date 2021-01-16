@@ -1,4 +1,9 @@
 <resources>
     <string name="app_name">Ciphelet</string>
     <string name="server">ws://192.168.178.75:8080/ws</string>
+    <string name="registerButton">Register</string>
+    <string name="loginButton">Login</string>
+    <string name="password">Password</string>
+    <string name="new_password">New Password</string>
+    <string name="welcome">Welcome - %s</string>
 </resources>

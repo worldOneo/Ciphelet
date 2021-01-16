@@ -21,6 +21,7 @@ func (s *Server) register(rAction *registerAction, sess *Session) {
 		sess.Challenged = true
 		sKey, err := encryption.EncodeKey(key)
 		if err != nil {
+			log.Printf("Unable to encode key: \"%v\"", err)
 			sess.Ws.WriteJSON(requiredPacket)
 			return
 		}
@@ -35,6 +36,8 @@ func (s *Server) register(rAction *registerAction, sess *Session) {
 		requiredPacket.RegisterAction.HumanID = userid.HumanID
 		requiredPacket.RegisterAction.User = userid.Snowflake
 		sess.Ws.WriteJSON(requiredPacket)
+	} else {
+		log.Printf("Err %v Token: %v, Ex: %v", err, token, sess.Challenge)
 	}
 	if err != nil {
 		sess.Ws.WriteJSON(requiredPacket)

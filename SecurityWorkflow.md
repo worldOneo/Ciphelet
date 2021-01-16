@@ -15,7 +15,7 @@ First bit unused due to signing
 We can generate 2048 Snowflakes / Worker / Ms over 139 Years
 
 ### \*Key
-A private / publik key (or in combination "key pair") is a RSA key of 4096 bit strength.
+A private / publik key (or in combination "key pair") is a RSA key of 2048 bit strength.
 The private key is **never** shared over the internet or other method.
 
 ### Session Challenge

@@ -13,7 +13,7 @@ Ciphelet is an [E2EE](https://en.wikipedia.org/wiki/End-to-end_encryption) Chat 
 - [ ] Session manager for multiple gateways
 - [ ] "Forget me"
 
-## Server (Session manager)
+### Server (Session manager)
 - [ ] Forward messages
 
 ### Client (logic)
@@ -26,9 +26,9 @@ Ciphelet is an [E2EE](https://en.wikipedia.org/wiki/End-to-end_encryption) Chat 
 - [ ] Fetching groups
 - [ ] "Forget me"
 
-## Client (GUI)
-- [ ] Registration
-- [ ] Login
+### Client (GUI)
+- [X] Registration
+- [X] Login
 - [ ] Sending messages
 - [ ] Creating groups
 - [ ] "Forget me"
@@ -38,7 +38,7 @@ Details for the secruity implementation can be found in `SecruityWorkflow.md`
 
 # Encryption
 The Ciphelet client uses a Hybrid encryption.
-It uses a combination of RSA 4096 OAEP and AES-512 GCM, the strongest commonly available (and fast enough) encryptions.
+It uses a combination of RSA 2048 OAEP and AES-256 GCM, the strongest commonly available (and fast enough) encryptions.
 
 ## How?
-The idea is that if a client (Alice) wants to write another client (Bob) Alice fetches Bob's publickey from the server creates a AES-512 Key encrypts it with bobs public key and sends the encrypted AES key back to the server. Now Bob and Alice have a shared secret which can encrypt messages reasonable fast.
+The idea is that if a client (Alice) wants to write another client (Bob) Alice fetches Bob's publickey from the server creates a AES-256 Key encrypts it with bobs public key and sends the encrypted AES key back to the server. Now Bob and Alice have a shared secret which can encrypt messages reasonable fast.

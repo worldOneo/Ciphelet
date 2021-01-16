@@ -11,10 +11,8 @@ import com.github.worldoneo.ciphelet.connector.encryption.EncryptionUtility;
 
 import java.security.KeyPair;
 import java.security.PrivateKey;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 public class RegistrationService {
     private final static ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -24,16 +22,7 @@ public class RegistrationService {
         this.connector = connector;
     }
 
-    public Future<CipheletAPI> register(final String password) {
-        return executorService.submit(new Callable<CipheletAPI>() {
-            @Override
-            public CipheletAPI call() {
-                return register0(password);
-            }
-        });
-    }
-
-    private CipheletAPI register0(String password) {
+    public CipheletAPI register(final String password) {
         connector.Connect();
         System.out.println("Register0");
         final CipheletAPI[] cipheletAPI = new CipheletAPI[1];

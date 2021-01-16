@@ -29,18 +29,18 @@
             app:layout_constraintTop_toTopOf="parent">
 
             <EditText
-                android:id="@+id/registerPasswordInput"
+                android:id="@+id/loginPasswordInput"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ems="10"
-                android:hint="@string/new_password"
+                android:hint="@string/password"
                 android:inputType="textPassword" />
 
             <Button
-                android:id="@+id/registerButton"
+                android:id="@+id/loginButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/registerButton" />
+                android:text="@string/loginButton" />
         </LinearLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
