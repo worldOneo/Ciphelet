@@ -1,9 +1,10 @@
 package com.github.worldoneo.ciphelet.listener;
 
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.view.View;
 import android.widget.EditText;
+
+import androidx.core.util.Consumer;
 
 import com.github.worldoneo.ciphelet.MainActivity;
 import com.github.worldoneo.ciphelet.R;
@@ -15,8 +16,6 @@ import com.github.worldoneo.ciphelet.storage.SecureStorage;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 
 public class RegisterClickListener implements View.OnClickListener {
     @Override
@@ -33,20 +32,25 @@ public class RegisterClickListener implements View.OnClickListener {
         try {
             final SharedPreferences preferences = instance.getPreferences();
             final URI uri = new URI(instance.getStringsxml(R.string.server));
-            final SecureStorage secureStorage = new SecureStorage(preferences, EncryptionUtility.getKeyFromPassword(password, SecureStorage.getSalt(preferences)));
             new Thread(new Runnable() {
                 @Override
                 public void run() {
+                    final SecureStorage secureStorage = new SecureStorage(preferences, EncryptionUtility.getKeyFromPassword(password, SecureStorage.getSalt(preferences)));
                     Connector connector = new Connector(uri);
                     RegistrationService r = new RegistrationService(connector);
-                    CipheletAPI cipheletAPI = r.register(password);
-                    secureStorage.store("privatekey", EncryptionUtility.EncodeKey(cipheletAPI.privateKey));
-                    secureStorage.store("humanid", cipheletAPI.humanID);
-                    System.out.println("Registered as: " + cipheletAPI.humanID);
-                    MainActivity.getInstance().loggedIn(cipheletAPI);
+                    r.register(password);
+                    r.onRegister(new Consumer<CipheletAPI>() {
+                        @Override
+                        public void accept(CipheletAPI cipheletAPI) {
+                            secureStorage.store("privatekey", EncryptionUtility.EncodeKey(cipheletAPI.privateKey));
+                            secureStorage.store("humanid", cipheletAPI.humanID);
+                            System.out.println("Registered as: " + cipheletAPI.humanID);
+                            MainActivity.getInstance().loggedIn(cipheletAPI);
+                        }
+                    });
                 }
             }).start();
-        } catch (URISyntaxException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+        } catch (URISyntaxException e) {
             e.printStackTrace();
         }
     }

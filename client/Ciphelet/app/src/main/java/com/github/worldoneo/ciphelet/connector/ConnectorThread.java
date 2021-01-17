@@ -1,5 +1,9 @@
 package com.github.worldoneo.ciphelet.connector;
 
+import android.content.SharedPreferences;
+
+import androidx.core.util.Consumer;
+
 import com.github.worldoneo.ciphelet.MainActivity;
 import com.github.worldoneo.ciphelet.R;
 import com.github.worldoneo.ciphelet.connector.encryption.EncryptionUtility;
@@ -14,17 +18,19 @@ import lombok.SneakyThrows;
 public class ConnectorThread extends Thread {
     private final String password;
     private final URI u;
-    private final SecureStorage secureStorage;
+    private final SharedPreferences preferences;
+    private SecureStorage secureStorage;
 
 
-    public ConnectorThread(String password, URI u, SecureStorage secureStorage) {
+    public ConnectorThread(String password, URI u, SharedPreferences preferences) {
         this.password = password;
         this.u = u;
-        this.secureStorage = secureStorage;
+        this.preferences = preferences;
     }
 
     @Override
     public void run() {
+        this.secureStorage = new SecureStorage(preferences, EncryptionUtility.getKeyFromPassword(password, SecureStorage.getSalt(preferences)));
         System.out.println("Going async!");
         URI uri = null;
         try {
@@ -37,7 +43,12 @@ public class ConnectorThread extends Thread {
                 secureStorage.get("humanid", String.class),
                 new Connector(uri),
                 EncryptionUtility.DecodeKey(secureStorage.get("privatekey", String.class)));
+        cipheletAPI.onLogin(new Consumer<CipheletAPI>(){
+            @Override
+            public void accept(CipheletAPI cipheletAPI) {
+                MainActivity.getInstance().loggedIn(cipheletAPI);
+            }
+        });
         cipheletAPI.login(password);
-        MainActivity.getInstance().loggedIn(cipheletAPI);
     }
 }

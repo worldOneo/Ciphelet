@@ -11,16 +11,15 @@ import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingDeque;
 
 public class Connector {
     public static final Gson gson = new GsonBuilder().create();
     private final ActionClient Ws;
     private KeyPair keyPair;
     private Map<String, List<Consumer<GenericAction>>> actionListeners = new ConcurrentHashMap<>();
-    private BlockingQueue<GenericAction> queue = new LinkedBlockingDeque<>();
+    private Map<String, List<Consumer<GenericAction>>> oneTimeListeners = new ConcurrentHashMap<>();
+
 
     public Connector(URI address) {
         Ws = new ActionClient(address);
@@ -58,19 +57,28 @@ public class Connector {
                         actionConsumer.accept(genericAction);
                     }
                 }
-                queue.offer(genericAction);
+                if (oneTimeListeners.get(genericAction.action) != null) {
+                    for (Consumer<GenericAction> actionConsumer : oneTimeListeners.get(genericAction.action)) {
+                        actionConsumer.accept(genericAction);
+                    }
+                    oneTimeListeners.remove(genericAction.action);
+                }
             }
         });
     }
 
-    public void awaitAction(Consumer<GenericAction> actionConsumer) throws InterruptedException {
-        actionConsumer.accept(queue.take());
-    }
 
     public void actionHook(String action, Consumer<GenericAction> actionConsumer) {
         if (!actionListeners.containsKey(action)) {
             actionListeners.put(action, new ArrayList<Consumer<GenericAction>>());
         }
         actionListeners.get(action).add(actionConsumer);
+    }
+
+    public void once(String action, Consumer<GenericAction> actionConsumer) {
+        if (!oneTimeListeners.containsKey(action)) {
+            oneTimeListeners.put(action, new ArrayList<Consumer<GenericAction>>());
+        }
+        oneTimeListeners.get(action).add(actionConsumer);
     }
 }

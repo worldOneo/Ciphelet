@@ -1,11 +1,14 @@
 package com.github.worldoneo.ciphelet.connector;
 
+import androidx.core.util.Consumer;
+
 import com.github.worldoneo.ciphelet.connector.action.GenericAction;
 import com.github.worldoneo.ciphelet.connector.action.LoginAction;
 import com.github.worldoneo.ciphelet.connector.api.ChallengeHandler;
 import com.github.worldoneo.ciphelet.connector.hooks.ChatfetchHook;
 
 import java.security.PrivateKey;
+import java.security.PublicKey;
 
 
 public class CipheletAPI {
@@ -15,11 +18,13 @@ public class CipheletAPI {
     private boolean loggedIn = false;
     private boolean hooked = false;
     private long[] chatids;
+    private Consumer<CipheletAPI> onLogin;
 
     public CipheletAPI(String humanID, Connector server, PrivateKey privateKey) {
         this.humanID = humanID;
         this.privateKey = privateKey;
         this.connector = server;
+        connector.actionHook(GenericAction.ChallengeAction, new ChallengeHandler(privateKey, connector));
     }
 
     public void login(String password) {
@@ -34,16 +39,14 @@ public class CipheletAPI {
         loginAction.password = password;
         genericAction.loginAction = loginAction;
         connector.sendAction(genericAction);
-        try {
-            connector.awaitAction(new ChallengeHandler(privateKey, connector, new Runnable() {
-                @Override
-                public void run() {
-                    challengeDone();
-                }
-            }));
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        final CipheletAPI api = this;
+        connector.actionHook(GenericAction.ChallengeAction, new ChallengeHandler(privateKey, connector, new Runnable() {
+            @Override
+            public void run() {
+                challengeDone();
+                onLogin.accept(api);
+            }
+        }));
     }
 
     private void challengeDone() {
@@ -54,14 +57,15 @@ public class CipheletAPI {
     public void hook() {
         if (hooked) return;
         hooked = true;
-
         connector.actionHook(GenericAction.ChatfetchAction, new ChatfetchHook(this));
-        connector.sendAction(new GenericAction(GenericAction.ChatfetchAction));
-
     }
 
     public void setChatids(long[] chatids) {
         System.out.println("Recieved chat ids! : " + chatids);
         this.chatids = chatids;
+    }
+
+    public void onLogin(Consumer<CipheletAPI> onLogin) {
+        this.onLogin = onLogin;
     }
 }

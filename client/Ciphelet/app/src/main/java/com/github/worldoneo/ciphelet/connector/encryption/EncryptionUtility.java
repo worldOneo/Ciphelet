@@ -70,13 +70,17 @@ public class EncryptionUtility {
         }
     }
 
-    public static SecretKey getKeyFromPassword(String password, byte[] salt )
-            throws NoSuchAlgorithmException, InvalidKeySpecException {
-        SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2withHmacSHA1");
+    public static SecretKey getKeyFromPassword(String password, byte[] salt ) {
+        try {
+        SecretKeyFactory factory =  SecretKeyFactory.getInstance("PBKDF2withHmacSHA1");
         KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, 65536, 256);
         SecretKey secret = new SecretKeySpec(factory.generateSecret(spec)
                 .getEncoded(), "AES");
         return secret;
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public static byte[] randomBytes(int length) {

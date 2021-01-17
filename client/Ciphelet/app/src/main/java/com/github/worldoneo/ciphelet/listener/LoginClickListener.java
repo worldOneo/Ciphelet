@@ -34,10 +34,9 @@ public class LoginClickListener implements View.OnClickListener {
             SharedPreferences preferences = instance.getPreferences();
             URI uri = new URI(instance.getStringsxml(R.string.server));
             System.out.println("Setting up secureStorage");
-            SecureStorage secureStorage = new SecureStorage(preferences, EncryptionUtility.getKeyFromPassword(password, SecureStorage.getSalt(preferences)));
             System.out.println("Desyncing the universe!");
-            new ConnectorThread(password, uri, secureStorage).start();
-        } catch (URISyntaxException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+            new ConnectorThread(password, uri, preferences).start();
+        } catch (URISyntaxException e) {
             e.printStackTrace();
         }
     }
