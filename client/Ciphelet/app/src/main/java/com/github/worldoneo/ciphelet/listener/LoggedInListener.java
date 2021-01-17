@@ -15,7 +15,6 @@ public class LoggedInListener implements Runnable {
 
     @Override
     public void run() {
-        cipheletAPI.hook();
         MainActivity instance = MainActivity.getInstance();
         instance.setContentView(R.layout.activity_welcome);
         ((TextView) instance.findViewById(R.id.welcomeText)).setText(String.format(instance.getStringsxml(R.string.welcome), cipheletAPI.humanID));

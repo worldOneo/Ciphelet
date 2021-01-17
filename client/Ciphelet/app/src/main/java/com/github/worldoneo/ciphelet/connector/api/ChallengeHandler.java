@@ -29,13 +29,13 @@ public class ChallengeHandler implements Consumer<GenericAction> {
 
     @Override
     public void accept(GenericAction genericAction) {
-        if (!genericAction.action.equals(GenericAction.ChallengeAction)) {
+        if (!genericAction.action.equals(GenericAction.CHALLENGE_ACTION)) {
             System.out.println("Action listener recieved wrong action");
             return;
         }
         System.out.println("Challenge handled");
         try {
-            GenericAction response = new GenericAction(GenericAction.ChallengeAction);
+            GenericAction response = new GenericAction(GenericAction.CHALLENGE_ACTION);
             ChallengeAction challengeAction = new ChallengeAction();
             challengeAction.token = new String(EncryptionUtility.decryptRSA(
                     Base64.decode(genericAction.challengeAction.token.getBytes(), Base64.DEFAULT),

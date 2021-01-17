@@ -14,10 +14,10 @@ type ActionType string
 
 // A definition of action types
 const (
-	RegisterAction  ActionType = "register"
-	LoginAction     ActionType = "login"
-	ChallengeAction ActionType = "challenge"
-	ChatfetchAction ActionType = "chatfetch"
+	RegisterAction   ActionType = "register"
+	LoginAction      ActionType = "login"
+	ChallengeAction  ActionType = "challenge"
+	GroupfetchAction ActionType = "groupfetch"
 )
 
 // Server the open interface for applications
@@ -65,17 +65,17 @@ type registerAction struct {
 	Key      string `json:"key,omitempty"`
 }
 
-type chatfetchAction struct {
-	ChatID []snowflake.Snowflake `json:"userid,omitempty"`
+type groupfetchAction struct {
+	ChatID []snowflake.Snowflake `json:"chatid"`
 }
 
 type genericAction struct {
-	Action          ActionType       `json:"action"`
-	ChallengeAction *challengeAction `json:"challengeAction,omitempty"`
-	PublickeyAction *publickeyAction `json:"publickeyAction,omitempty"`
-	LoginAction     *loginAction     `json:"loginAction,omitempty"`
-	RegisterAction  *registerAction  `json:"registerAction,omitempty"`
-	ChatfetchAction *chatfetchAction `json:"chatfetchAction,omitempty"`
+	Action           ActionType        `json:"action"`
+	ChallengeAction  *challengeAction  `json:"challengeAction,omitempty"`
+	PublickeyAction  *publickeyAction  `json:"publickeyAction,omitempty"`
+	LoginAction      *loginAction      `json:"loginAction,omitempty"`
+	RegisterAction   *registerAction   `json:"registerAction,omitempty"`
+	GroupfetchAction *groupfetchAction `json:"groupfetchAction,omitempty"`
 }
 
 // NewServer creates a new Server
@@ -126,15 +126,15 @@ func (s *Server) Handler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		switch action.Action {
-		case ChatfetchAction:
+		case GroupfetchAction:
 			response := &genericAction{}
-			response.Action = ChatfetchAction
+			response.Action = GroupfetchAction + "success"
 			chats, err := s.authenticator.GetChats(session.UserID)
 			if err != nil {
 				log.Printf("Failed fetching the chats: \"%v\"", err)
 				continue
 			}
-			response.ChatfetchAction = &chatfetchAction{
+			response.GroupfetchAction = &groupfetchAction{
 				ChatID: chats,
 			}
 			session.Ws.WriteJSON(response)

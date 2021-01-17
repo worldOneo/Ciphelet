@@ -65,7 +65,7 @@ the actions are:
 
 ## register
 `parameter: password, key`  
-`response: humanID, userID`  
+`response: 'registersuccess' humanID, userID`  
 The clients sends his password and publickey to the server if both of are valid the server challenges the client.
 if the client is able to solve the challenge the server will add the client
 and respons with the new clients credentials.
@@ -83,7 +83,7 @@ to the server with a challenge action with the decrypted token to verify the cur
 
 ## lookup
 `parameter: humanid`  
-`return: key, userid`  
+`return: 'lookupsuccess' key, userid`  
 if the server recieves the publickey action, the action has to contain the parameter human id.
 It will then lookup the key and responds with a publickey action containing the human id and the publickey.
 
@@ -104,19 +104,19 @@ The client recieves this message if it is currently connected and another client
 
 ## messagefetch
 `parameter: chatid, time`  
-`return: []messages`  
+`return: 'messagefetchsuccess' []messages`  
 If the client wants to fetch a chat based on its humanid it needs to send a messagefetch action.
 The server will return the last 50 messages sent before that time.
 The messages are all encrypted individually and need to be decrypted by the client.
 
 ## chatfetch
 `noparmeter`  
-`return: []chatid`  
+`return: 'chatfetchsuccess' []chatid`  
 chatfetch returns every chatid of the group the client has chatted with.
 
 ## groupfetch
 `parameter: chatid`  
-`return: []userid` 
+`return: 'groupfetchseuccess' []userid` 
 groupfetch returns every user of a group
 
 # Tables

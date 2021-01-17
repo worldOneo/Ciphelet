@@ -7,6 +7,7 @@ import androidx.core.util.Consumer;
 import com.github.worldoneo.ciphelet.connector.action.GenericAction;
 import com.github.worldoneo.ciphelet.connector.action.RegisterAction;
 import com.github.worldoneo.ciphelet.connector.api.ChallengeHandler;
+import com.github.worldoneo.ciphelet.connector.api.ChallengeService;
 import com.github.worldoneo.ciphelet.connector.encryption.EncryptionUtility;
 
 import java.security.KeyPair;
@@ -38,13 +39,14 @@ public class RegistrationService {
         rAction.key = new String(Base64.encode(enced, Base64.DEFAULT)).replace("\n", "");
         genericAction.registerAction = rAction;
         final PrivateKey privateKey = keyPair.getPrivate();
-        connector.once(GenericAction.ChallengeAction, new ChallengeHandler(privateKey, connector));
-        connector.once(GenericAction.RegisterAction, new Consumer<GenericAction>() {
+        connector.once(GenericAction.Action.REGISTER.response, new Consumer<GenericAction>() {
             @Override
             public void accept(GenericAction genericAction) {
                 onRegister.accept(new CipheletAPI(genericAction.registerAction.humanid, connector, privateKey));
             }
         });
+
+        connector.once(GenericAction.Action.CHALLENGE.response, new ChallengeHandler(privateKey, connector));
         connector.sendAction(genericAction);
     }
 }
