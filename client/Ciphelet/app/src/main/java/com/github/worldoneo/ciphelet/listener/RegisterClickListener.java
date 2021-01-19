@@ -12,6 +12,9 @@ import com.github.worldoneo.ciphelet.connector.CipheletAPI;
 import com.github.worldoneo.ciphelet.connector.Connector;
 import com.github.worldoneo.ciphelet.connector.RegistrationService;
 import com.github.worldoneo.ciphelet.connector.encryption.EncryptionUtility;
+import com.github.worldoneo.ciphelet.connector.events.EventManager;
+import com.github.worldoneo.ciphelet.connector.events.LoginSuccessEvent;
+import com.github.worldoneo.ciphelet.connector.events.RegisterSuccessEvent;
 import com.github.worldoneo.ciphelet.storage.SecureStorage;
 
 import java.net.URI;
@@ -42,10 +45,11 @@ public class RegisterClickListener implements View.OnClickListener {
                     r.onRegister(new Consumer<CipheletAPI>() {
                         @Override
                         public void accept(CipheletAPI cipheletAPI) {
-                            secureStorage.store("privatekey", EncryptionUtility.EncodeKey(cipheletAPI.privateKey));
+                            secureStorage.store("privatekey", EncryptionUtility.encodeKey(cipheletAPI.privateKey));
                             secureStorage.store("humanid", cipheletAPI.humanID);
                             System.out.println("Registered as: " + cipheletAPI.humanID);
-                            MainActivity.getInstance().loggedIn(cipheletAPI);
+                            EventManager.getInstance().handleEvent(new RegisterSuccessEvent());
+                            EventManager.getInstance().handleEvent(new LoginSuccessEvent(cipheletAPI));
                         }
                     });
                 }

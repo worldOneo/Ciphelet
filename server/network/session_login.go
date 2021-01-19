@@ -39,7 +39,7 @@ func (s *Server) addSession(sess *Session) {
 			conn.WriteJSON(requiredPacket)
 		}
 
-		token, err := challenge(requiredPacket, sess, pubKey)
+		token, err := s.challenge(requiredPacket, sess, pubKey)
 		if err != nil || token != sess.Challenge {
 			log.Printf("Couldn't encrypt %v", err)
 			conn.WriteJSON(requiredPacket)

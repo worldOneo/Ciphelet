@@ -16,7 +16,7 @@ import java.util.concurrent.Executors;
 
 
 public class CipheletAPI {
-    public final PrivateKey privateKey;
+    public final byte[] privateKey;
     public final String humanID;
     private final Map<String, Service<?>> services = new HashMap<>();
     private final ExecutorService executorService = Executors.newCachedThreadPool();
@@ -24,7 +24,7 @@ public class CipheletAPI {
     private boolean loggedIn = false;
     private Consumer<CipheletAPI> onLogin;
 
-    public CipheletAPI(String humanID, Connector server, PrivateKey privateKey) {
+    public CipheletAPI(String humanID, Connector server, byte[] privateKey) {
         this.humanID = humanID;
         this.privateKey = privateKey;
         this.connector = server;

@@ -38,7 +38,5 @@ Details for the secruity implementation can be found in `SecruityWorkflow.md`
 
 # Encryption
 The Ciphelet client uses a Hybrid encryption.
-It uses a combination of RSA 2048 OAEP and AES-256 GCM, the strongest commonly available (and fast enough) encryptions.
-
-## How?
-The idea is that if a client (Alice) wants to write another client (Bob) Alice fetches Bob's publickey from the server creates a AES-256 Key encrypts it with bobs public key and sends the encrypted AES key back to the server. Now Bob and Alice have a shared secret which can encrypt messages reasonable fast.
+As private/publickey a EC 256 bit key.
+It uses NaCL to encrypt boxes based on that.

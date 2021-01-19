@@ -1,8 +1,12 @@
 package network
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"log"
 	"net/http"
+
+	"golang.org/x/crypto/nacl/box"
 
 	"github.com/gorilla/websocket"
 	"github.com/worldOneo/Ciphelet/authenticator"
@@ -25,6 +29,8 @@ type Server struct {
 	upgrader      *websocket.Upgrader
 	authenticator *authenticator.Authenticator
 	sessions      map[snowflake.Snowflake]*Session
+	privateKey    *[32]byte
+	publicKey     *[32]byte
 }
 
 // Session has a websocket and information about the connected user
@@ -51,6 +57,7 @@ type loginAction struct {
 
 type challengeAction struct {
 	Token string `json:"token,omitempty"`
+	PKey  string `json:"publickey,omitempty"`
 }
 
 type publickeyAction struct {
@@ -80,6 +87,9 @@ type genericAction struct {
 
 // NewServer creates a new Server
 func NewServer(auth *authenticator.Authenticator) *Server {
+	log.Printf("Generating keys...")
+	pKey, sKey, _ := box.GenerateKey(rand.Reader)
+	log.Printf("Generated key PKey: " + base64.StdEncoding.EncodeToString(pKey[:]))
 	return &Server{
 		upgrader: &websocket.Upgrader{
 			ReadBufferSize:  1024,
@@ -87,6 +97,8 @@ func NewServer(auth *authenticator.Authenticator) *Server {
 		},
 		sessions:      make(map[snowflake.Snowflake]*Session),
 		authenticator: auth,
+		privateKey:    sKey,
+		publicKey:     pKey,
 	}
 }
 

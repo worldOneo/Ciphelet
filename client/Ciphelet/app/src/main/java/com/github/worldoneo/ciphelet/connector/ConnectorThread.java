@@ -7,13 +7,12 @@ import androidx.core.util.Consumer;
 import com.github.worldoneo.ciphelet.MainActivity;
 import com.github.worldoneo.ciphelet.R;
 import com.github.worldoneo.ciphelet.connector.encryption.EncryptionUtility;
+import com.github.worldoneo.ciphelet.connector.events.EventManager;
+import com.github.worldoneo.ciphelet.connector.events.LoginSuccessEvent;
 import com.github.worldoneo.ciphelet.storage.SecureStorage;
 
-import java.net.CacheRequest;
 import java.net.URI;
 import java.net.URISyntaxException;
-
-import lombok.SneakyThrows;
 
 public class ConnectorThread extends Thread {
     private final String password;
@@ -42,11 +41,11 @@ public class ConnectorThread extends Thread {
         CipheletAPI cipheletAPI = new CipheletAPI(
                 secureStorage.get("humanid", String.class),
                 new Connector(uri),
-                EncryptionUtility.DecodeKey(secureStorage.get("privatekey", String.class)));
-        cipheletAPI.onLogin(new Consumer<CipheletAPI>(){
+                EncryptionUtility.decodeKey(secureStorage.get("privatekey", String.class)));
+        cipheletAPI.onLogin(new Consumer<CipheletAPI>() {
             @Override
             public void accept(CipheletAPI cipheletAPI) {
-                MainActivity.getInstance().loggedIn(cipheletAPI);
+                EventManager.getInstance().handleEvent(new LoginSuccessEvent(cipheletAPI));
             }
         });
         cipheletAPI.login(password);

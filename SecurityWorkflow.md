@@ -15,7 +15,7 @@ First bit unused due to signing
 We can generate 2048 Snowflakes / Worker / Ms over 139 Years
 
 ### \*Key
-A private / publik key (or in combination "key pair") is a RSA key of 2048 bit strength.
+A private / publik key (or in combination "key pair") is a EC key of 256 bit strength (RSA equivilant of ca. 3072 bit).
 The private key is **never** shared over the internet or other method.
 
 ### Session Challenge
@@ -88,7 +88,7 @@ if the server recieves the publickey action, the action has to contain the param
 It will then lookup the key and responds with a publickey action containing the human id and the publickey.
 
 ## creategroup
-`parameter: []{userid, encryptedgroupkey}`  
+`parameter: []userid`  
 Every chat is a group.
 Private chats are groups with only 2 members.
 The group owner encryps the groups key (512bits) with each members publickey and sends them to the server.
@@ -121,37 +121,14 @@ groupfetch returns every user of a group
 
 # Tables
 
-## user_id (HumanID -> UserID)
-This table maps the Human-Readable ids to the Snowflakes of the user
-```SQL
-CREATE TABLE user (
-    user_id bigint,
-    human_id text,
-    PRIMARY KEY (user_id)
-);
-```
-
 ## user_credentials (UserID -> Hash)
 This table stores the hashes of the users.
 ```SQL
 CREATE TABLE user_credentials (
     user_id bigint,
-    human_id text,
     pw_hash text,
     public_key text,
-    PRIMARY KEY (human_id)
-);
-```
-
-## chat_keys
-This table stores the key generated for a group.
-```SQL
-CREATE TABLE chat_keys (
-    chat_id bigint,
-    user_id bigint,
-    key_id bigint,
-    chat_key text,
-    PRIMARY KEY(chat_id, user_id, key_id)
+    PRIMARY KEY (user_id)
 );
 ```
 

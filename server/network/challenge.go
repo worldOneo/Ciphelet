@@ -1,23 +1,16 @@
 package network
 
 import (
-	"crypto/rsa"
-	"log"
-
 	"github.com/worldOneo/Ciphelet/encryption"
 )
 
-func challenge(requiredPacket genericAction, sess *Session, key *rsa.PublicKey) (string, error) {
-	userChallenge, err := encryption.B64Encrypt(key, []byte(sess.Challenge))
-	if err != nil {
-		log.Printf("Unable to encrypt challenge, %v", err)
-		sess.Ws.WriteJSON(requiredPacket)
-		return "", err
-	}
+func (s *Server) challenge(requiredPacket genericAction, sess *Session, publickey *[32]byte) (string, error) {
+	//https://godoc.org/golang.org/x/crypto/nacl/box
 	sess.Ws.WriteJSON(genericAction{
 		Action: ChallengeAction,
 		ChallengeAction: &challengeAction{
-			Token: userChallenge,
+			Token: encryption.B64Encrypt(publickey, s.privateKey, []byte(sess.Challenge)),
+			PKey:  encryption.EncodeKey(s.publicKey),
 		},
 	})
 	action, err := getNextAction(sess.Ws)

@@ -23,6 +23,10 @@ android {
 
 }
 
+repositories {
+    maven { url 'https://jitpack.io' }
+}
+
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
@@ -33,7 +37,6 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
     implementation 'com.google.code.gson:gson:2.8.5'
     implementation 'org.java-websocket:Java-WebSocket:1.5.1'
-    implementation 'org.projectlombok:lombok:1.18.16'
-    annotationProcessor 'org.projectlombok:lombok:1.18.16'
     implementation 'androidx.recyclerview:recyclerview:1.1.0'
+    implementation 'com.github.instantwebp2p:tweetnacl-java:v1.1.2'
 }

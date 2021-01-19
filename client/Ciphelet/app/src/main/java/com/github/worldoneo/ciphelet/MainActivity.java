@@ -7,14 +7,14 @@ import android.widget.Button;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.github.worldoneo.ciphelet.connector.CipheletAPI;
+import com.github.worldoneo.ciphelet.connector.events.EventManager;
 import com.github.worldoneo.ciphelet.listener.LoggedInListener;
 import com.github.worldoneo.ciphelet.listener.LoginClickListener;
 import com.github.worldoneo.ciphelet.listener.RegisterClickListener;
 
-import lombok.Setter;
-
 public class MainActivity extends AppCompatActivity {
     public static MainActivity instance;
+    private CipheletAPI cipheletAPI;
 
     public static MainActivity getInstance() {
         return instance;
@@ -33,10 +33,7 @@ public class MainActivity extends AppCompatActivity {
             final Button login = findViewById(R.id.loginButton);
             login.setOnClickListener(new LoginClickListener());
         }
-    }
-
-    public void loggedIn(CipheletAPI api) {
-        runOnUiThread(new LoggedInListener(api));
+        EventManager.getInstance().registerEvent(new LoggedInListener());
     }
 
     public String getStringsxml(int id) {

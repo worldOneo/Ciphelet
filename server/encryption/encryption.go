@@ -2,47 +2,37 @@ package encryption
 
 import (
 	"crypto/rand"
-	"crypto/rsa"
-	"crypto/sha256"
-	"crypto/x509"
 	"encoding/base64"
+	"fmt"
+	"io"
+
+	"golang.org/x/crypto/nacl/box"
 )
 
 // GetPublicKey creates a publickey based of an b64 encoded string
-func GetPublicKey(key string) (*rsa.PublicKey, error) {
-	bytes, err := base64.StdEncoding.DecodeString(key)
+func GetPublicKey(key string) (*[32]byte, error) {
+	var pkey [32]byte
+	deced, err := base64.StdEncoding.DecodeString(key)
 	if err != nil {
 		return nil, err
 	}
-
-	pKey, err := x509.ParsePKIXPublicKey(bytes)
-	if err != nil {
-		return nil, err
+	if len(deced) != 32 {
+		return nil, fmt.Errorf("wrong input key size. length: %d expected 32", len(deced))
 	}
-	return pKey.(*rsa.PublicKey), nil
+
+	copy(pkey[:], deced)
+	return &pkey, nil
 }
 
-//Encrypt encrypts a message with a rsa PublicKey
-func Encrypt(key *rsa.PublicKey, msg []byte) ([]byte, error) {
-	return rsa.EncryptOAEP(sha256.New(), rand.Reader, key, msg, nil)
-}
-
-// B64Encrypt encrypts a message with a rsa PublicKey and returns the base64 value
-func B64Encrypt(key *rsa.PublicKey, msg []byte) (string, error) {
-	bs, err := Encrypt(key, msg)
-	if err != nil {
-		return "", err
-	}
-	return base64.StdEncoding.EncodeToString(bs), nil
+// B64Encrypt encrypts a message with NaCL and returns the base64 value
+func B64Encrypt(theirPublicKey, ourPrivateKey *[32]byte, msg []byte) string {
+	var nonce [24]byte
+	io.ReadFull(rand.Reader, nonce[:])
+	encrypted := box.Seal(nonce[:], msg, &nonce, theirPublicKey, ourPrivateKey)
+	return base64.StdEncoding.EncodeToString(encrypted)
 }
 
 // EncodeKey encodes the keys N
-func EncodeKey(key *rsa.PublicKey) (string, error) {
-	pKey, err := x509.MarshalPKIXPublicKey(key)
-	if err != nil {
-		return "", err
-	}
-
-	eKey := base64.StdEncoding.EncodeToString(pKey)
-	return eKey, nil
+func EncodeKey(key *[32]byte) string {
+	return base64.StdEncoding.EncodeToString(key[:])
 }

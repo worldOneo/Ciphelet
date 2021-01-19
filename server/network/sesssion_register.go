@@ -16,15 +16,10 @@ func (s *Server) register(rAction *registerAction, sess *Session) {
 		sess.Ws.WriteJSON(requiredPacket)
 		return
 	}
-	token, err := challenge(requiredPacket, sess, key)
+	token, err := s.challenge(requiredPacket, sess, key)
 	if err == nil && token == sess.Challenge {
 		sess.Challenged = true
-		sKey, err := encryption.EncodeKey(key)
-		if err != nil {
-			log.Printf("Unable to encode key: \"%v\"", err)
-			sess.Ws.WriteJSON(requiredPacket)
-			return
-		}
+		sKey := encryption.EncodeKey(key)
 		log.Print("CLIENT VALID REGISTER HANDSHAKE!!!!")
 		userid, err := s.authenticator.RegisterUser(password, sKey)
 		if err != nil {
