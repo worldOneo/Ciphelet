@@ -1,6 +1,7 @@
 package com.github.worldoneo.ciphelet.connector;
 
 import android.content.SharedPreferences;
+import android.util.Base64;
 
 import androidx.core.util.Consumer;
 
@@ -39,7 +40,7 @@ public class ConnectorThread extends Thread {
         }
 
         CipheletAPI cipheletAPI = new CipheletAPI(
-                secureStorage.get("humanid", String.class),
+                secureStorage.get("userid", Long.class),
                 new Connector(uri),
                 EncryptionUtility.decodeKey(secureStorage.get("privatekey", String.class)));
         cipheletAPI.onLogin(new Consumer<CipheletAPI>() {

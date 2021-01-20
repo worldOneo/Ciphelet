@@ -2,7 +2,6 @@ package authenticator
 
 import (
 	"errors"
-	"regexp"
 
 	"github.com/gocql/gocql"
 	"github.com/worldOneo/Ciphelet/snowflake"
@@ -11,18 +10,11 @@ import (
 // ErrUserNotFound defines that the user wasnt found in the database
 var ErrUserNotFound = errors.New("user not found")
 
-// ErrInvalidID defines that the passed id is not valid
-var ErrInvalidID = errors.New("the id is invalid")
-
 // ErrCredentialsInvalid defines that the passed credentials are not valid
 var ErrCredentialsInvalid = errors.New("the credentials invalid")
 
-// HumanIDLayout the layout of the HumanID
-var HumanIDLayout, _ = regexp.Compile("[a-hjkmnp-zA-HJKMNP-Z]{8}")
-
 // UserID is a maping from a humanreadable 8 Digit human readable id to the users snowflake
 type UserID struct {
-	HumanID   string              `json:"id"`
 	Snowflake snowflake.Snowflake `json:"snowflake"`
 }
 
@@ -45,12 +37,9 @@ type Authenticator struct {
 }
 
 // GetUserKey queries the user and the password and the publickey.
-func (a *Authenticator) GetUserKey(humanID string) (*CredentialUser, error) {
-	if !IsHumanID(humanID) {
-		return nil, ErrInvalidID
-	}
+func (a *Authenticator) GetUserKey(flake snowflake.Snowflake) (*CredentialUser, error) {
 
-	query := a.CQLSession.Query("SELECT public_key, pw_hash, user_id FROM user_credentials WHERE human_id = ?;", humanID)
+	query := a.CQLSession.Query("SELECT public_key, pw_hash FROM user_credentials WHERE user_id = ?;", flake)
 	err := query.Exec()
 	if err != nil {
 		return nil, err
@@ -58,40 +47,28 @@ func (a *Authenticator) GetUserKey(humanID string) (*CredentialUser, error) {
 	cUser := CredentialUser{}
 
 	iter := query.Iter()
-	if !iter.Scan(&cUser.Publickey, &cUser.Password, &cUser.Snowflake) {
+	if !iter.Scan(&cUser.Publickey, &cUser.Password) {
 		return nil, ErrUserNotFound
 	}
 	iter.Close()
-	cUser.HumanID = humanID
+	cUser.Snowflake = flake
 	return &cUser, nil
-}
-
-// IsHumanID test a humanID string for its layout
-func IsHumanID(humanID string) bool {
-	return HumanIDLayout.Match([]byte(humanID))
 }
 
 // RegisterUser registers a user into the server
 func (a *Authenticator) RegisterUser(password string, publickey string) (userID *UserID, err error) {
-	humanID := GenerateHumanID()
-	_, err = a.GetUserKey(humanID)
-	for err == nil {
-		_, err = a.GetUserKey(humanID)
-		humanID = GenerateHumanID() // Ensure id is free
-	}
 	uID := a.Generator.GenSnowflake()
 	hash, err := GeneratePassword(DefaultPasswordConfig, password)
 	if err != nil {
 		return nil, err
 	}
-	query := a.CQLSession.Query("INSERT INTO user_credentials(user_id, human_id, pw_hash, public_key) values(?, ?, ?, ?);",
-		uID, humanID, hash, publickey)
+	query := a.CQLSession.Query("INSERT INTO user_credentials(user_id, pw_hash, public_key) values(?, ?, ?);",
+		uID, hash, publickey)
 	err = query.Exec()
 	if err != nil {
 		return nil, err
 	}
 	return &UserID{
-		HumanID:   humanID,
 		Snowflake: uID,
 	}, nil
 }

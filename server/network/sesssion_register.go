@@ -28,7 +28,6 @@ func (s *Server) register(rAction *registerAction, sess *Session) {
 		}
 		requiredPacket.Action = RegisterAction + "success"
 		requiredPacket.RegisterAction = &registerAction{}
-		requiredPacket.RegisterAction.HumanID = userid.HumanID
 		requiredPacket.RegisterAction.User = userid.Snowflake
 		sess.Ws.WriteJSON(requiredPacket)
 	} else {

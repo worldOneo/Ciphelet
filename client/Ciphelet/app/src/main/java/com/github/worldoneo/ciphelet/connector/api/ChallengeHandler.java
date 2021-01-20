@@ -34,7 +34,6 @@ public class ChallengeHandler implements Consumer<GenericAction> {
             return;
         }
         ChallengeAction requestedAction = genericAction.challengeAction;
-        System.out.println("Challenge handled with pkey: "+ requestedAction.publickey);
         GenericAction response = new GenericAction(GenericAction.CHALLENGE_ACTION);
         ChallengeAction challengeAction = new ChallengeAction();
         byte[] decrypted = EncryptionUtility.decryptNaCL(

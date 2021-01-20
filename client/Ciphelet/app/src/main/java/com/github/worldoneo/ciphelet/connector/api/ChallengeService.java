@@ -10,7 +10,7 @@ import com.github.worldoneo.ciphelet.connector.encryption.EncryptionUtility;
 import com.github.worldoneo.ciphelet.connector.events.ChallengeSuccessEvent;
 import com.github.worldoneo.ciphelet.connector.events.EventManager;
 
-public class ChallengeService extends Service<Void> {
+public class ChallengeService extends Service {
     public ChallengeService(Connector connector, CipheletAPI cipheletAPI) {
         super(connector, cipheletAPI, GenericAction.Action.CHALLENGE);
     }
@@ -21,9 +21,10 @@ public class ChallengeService extends Service<Void> {
         System.out.println("Challenge handled");
         GenericAction response = new GenericAction(GenericAction.CHALLENGE_ACTION);
         ChallengeAction challengeAction = new ChallengeAction();
-        challengeAction.token = new String(EncryptionUtility.decryptNaCL(
+        byte[] bytes = EncryptionUtility.decryptNaCL(
                 Base64.decode(action.token.getBytes(), Base64.DEFAULT),
-                cipheletAPI.privateKey, EncryptionUtility.decodeKey(challengeAction.publickey)));
+                EncryptionUtility.decodeKey(action.publickey), cipheletAPI.privateKey);
+        challengeAction.token = new String(bytes);
         response.challengeAction = challengeAction;
         connector.sendAction(response);
         EventManager.getInstance().handleEvent(new ChallengeSuccessEvent(challengeAction));

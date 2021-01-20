@@ -42,16 +42,12 @@ type Session struct {
 	Closed     bool
 }
 
-type humanIdentified struct {
-	HumanID string `json:"humanid,omitempty"`
-}
-
 type flaked struct {
 	User snowflake.Snowflake `json:"userid,omitempty"`
 }
 
 type loginAction struct {
-	humanIdentified
+	flaked
 	Password string `json:"password,omitempty"`
 }
 
@@ -66,7 +62,6 @@ type publickeyAction struct {
 }
 
 type registerAction struct {
-	humanIdentified
 	flaked
 	Password string `json:"password,omitempty"`
 	Key      string `json:"key,omitempty"`
@@ -112,7 +107,7 @@ func (s *Server) Handler(w http.ResponseWriter, r *http.Request) {
 	}
 	session := &Session{
 		Ws:         conn,
-		Challenge:  authenticator.GenerateHumanID(),
+		Challenge:  generateChallenge(),
 		Challenged: false,
 		UserID:     0,
 		Closed:     false,

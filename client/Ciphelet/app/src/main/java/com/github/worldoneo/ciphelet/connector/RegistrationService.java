@@ -34,7 +34,7 @@ public class RegistrationService {
         connector.once(GenericAction.Action.REGISTER.response, new Consumer<GenericAction>() {
             @Override
             public void accept(GenericAction genericAction) {
-                onRegister.accept(new CipheletAPI(genericAction.registerAction.humanid, connector, privateKey));
+                onRegister.accept(new CipheletAPI(genericAction.registerAction.userid, connector, privateKey));
             }
         });
 

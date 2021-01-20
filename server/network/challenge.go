@@ -1,11 +1,16 @@
 package network
 
 import (
+	"encoding/base64"
+	"log"
+	"math/rand"
+
 	"github.com/worldOneo/Ciphelet/encryption"
 )
 
 func (s *Server) challenge(requiredPacket genericAction, sess *Session, publickey *[32]byte) (string, error) {
 	//https://godoc.org/golang.org/x/crypto/nacl/box
+	log.Print(base64.StdEncoding.EncodeToString(publickey[:]))
 	sess.Ws.WriteJSON(genericAction{
 		Action: ChallengeAction,
 		ChallengeAction: &challengeAction{
@@ -19,4 +24,14 @@ func (s *Server) challenge(requiredPacket genericAction, sess *Session, publicke
 		return "", err
 	}
 	return action.ChallengeAction.Token, nil
+}
+
+const chars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ"
+
+func generateChallenge() string {
+	b := make([]byte, 8)
+	for i := 0; i < 8; i++ {
+		b[i] = chars[rand.Intn(len(chars))]
+	}
+	return string(b)
 }

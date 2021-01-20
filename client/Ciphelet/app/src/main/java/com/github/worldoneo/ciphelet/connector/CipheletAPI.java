@@ -6,9 +6,9 @@ import com.github.worldoneo.ciphelet.connector.action.GenericAction;
 import com.github.worldoneo.ciphelet.connector.action.LoginAction;
 import com.github.worldoneo.ciphelet.connector.api.ChallengeService;
 import com.github.worldoneo.ciphelet.connector.api.GroupfetchService;
+import com.github.worldoneo.ciphelet.connector.api.LoginRequiredService;
 import com.github.worldoneo.ciphelet.connector.api.Service;
 
-import java.security.PrivateKey;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -17,20 +17,21 @@ import java.util.concurrent.Executors;
 
 public class CipheletAPI {
     public final byte[] privateKey;
-    public final String humanID;
-    private final Map<String, Service<?>> services = new HashMap<>();
+    public final long userid;
+    private final Map<String, Service> services = new HashMap<>();
     private final ExecutorService executorService = Executors.newCachedThreadPool();
     private Connector connector;
     private boolean loggedIn = false;
     private Consumer<CipheletAPI> onLogin;
 
-    public CipheletAPI(String humanID, Connector server, byte[] privateKey) {
-        this.humanID = humanID;
+    public CipheletAPI(long userid, Connector server, byte[] privateKey) {
+        this.userid = userid;
         this.privateKey = privateKey;
         this.connector = server;
 
         registerService(new ChallengeService(connector, this));
         registerService(new GroupfetchService(connector, this));
+        registerService(new LoginRequiredService(connector, this));
     }
 
     private void fetch() {
@@ -49,8 +50,8 @@ public class CipheletAPI {
         }
         GenericAction genericAction = new GenericAction(GenericAction.LOGIN_ACTION);
         LoginAction loginAction = new LoginAction();
-        System.out.println("Logging in as: " + this.humanID);
-        loginAction.humanid = this.humanID;
+        System.out.println("Logging in as: " + this.userid);
+        loginAction.userid = this.userid;
         loginAction.password = password;
         genericAction.loginAction = loginAction;
         connector.sendAction(genericAction);
@@ -73,7 +74,7 @@ public class CipheletAPI {
         this.onLogin = onLogin;
     }
 
-    public void registerService(Service<?> service) {
+    public void registerService(Service service) {
         services.put(service.getRecievingPacket(), service);
         connector.actionHook(service.getRecievingPacket(), service);
     }

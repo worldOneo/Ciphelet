@@ -27,9 +27,9 @@ func (s *Server) addSession(sess *Session) {
 			continue
 		}
 		lAction := nextAction.LoginAction
-		cUser, err := s.authenticator.GetUserKey(lAction.HumanID)
+		cUser, err := s.authenticator.GetUserKey(lAction.User)
 		if err != nil {
-			log.Printf("Couldn't find user '%s': \"%v\"", lAction.HumanID, err)
+			log.Printf("Couldn't find user '%d': \"%v\"", lAction.User, err)
 			conn.WriteJSON(requiredPacket)
 			continue
 		}
@@ -45,7 +45,7 @@ func (s *Server) addSession(sess *Session) {
 			conn.WriteJSON(requiredPacket)
 			continue
 		}
-		log.Printf("User: %v logged in", cUser.HumanID)
+		log.Printf("User: %v logged in", cUser.Snowflake)
 		sess.Challenged = true
 		return
 	}

@@ -46,8 +46,8 @@ public class RegisterClickListener implements View.OnClickListener {
                         @Override
                         public void accept(CipheletAPI cipheletAPI) {
                             secureStorage.store("privatekey", EncryptionUtility.encodeKey(cipheletAPI.privateKey));
-                            secureStorage.store("humanid", cipheletAPI.humanID);
-                            System.out.println("Registered as: " + cipheletAPI.humanID);
+                            secureStorage.store("userid", cipheletAPI.userid);
+                            System.out.println("Registered as: " + cipheletAPI.userid);
                             EventManager.getInstance().handleEvent(new RegisterSuccessEvent());
                             EventManager.getInstance().handleEvent(new LoginSuccessEvent(cipheletAPI));
                         }

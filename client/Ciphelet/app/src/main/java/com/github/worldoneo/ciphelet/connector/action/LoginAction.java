@@ -1,6 +1,6 @@
 package com.github.worldoneo.ciphelet.connector.action;
 
 public class LoginAction implements IAction {
-    public String humanid;
+    public long userid;
     public String password;
 }
