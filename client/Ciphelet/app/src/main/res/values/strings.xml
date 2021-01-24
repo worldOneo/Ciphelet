@@ -8,4 +8,5 @@
     <string name="welcome">Welcome - %s</string>
     <string name="contact_name">%s</string>
     <string name="contact_id">(%s)</string>
+    <string name="new_chat">+ Chat</string>
 </resources>

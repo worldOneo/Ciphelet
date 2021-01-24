@@ -9,7 +9,7 @@ Ciphelet is an [E2EE](https://en.wikipedia.org/wiki/End-to-end_encryption) Chat 
 - [ ] Forwarding messages
 - [ ] Creating groups
 - [ ] Fetching keys
-- [ ] Fetching groups
+- [X] Fetching groups
 - [ ] Session manager for multiple gateways
 - [ ] "Forget me"
 
@@ -23,7 +23,7 @@ Ciphelet is an [E2EE](https://en.wikipedia.org/wiki/End-to-end_encryption) Chat 
 - [ ] Forwarding messages
 - [ ] Creating groups
 - [ ] Fetching keys
-- [ ] Fetching groups
+- [X] Fetching groups
 - [ ] "Forget me"
 
 ### Client (GUI)

@@ -107,15 +107,15 @@ If the client wants to fetch a chat based on its userid it needs to send a messa
 The server will return the last 50 messages sent before that time.
 The messages are all encrypted individually and need to be decrypted by the client.
 
-## chatfetch
-`noparmeter`  
-`return: 'chatfetchsuccess' []chatid`  
-chatfetch returns every chatid of the group the client has chatted with.
-
 ## groupfetch
+`noparmeter`  
+`return: 'groupfetchsuccess' []chatid`  
+groupfetch returns every chatid of the group the client has chatted with.
+
+## chatfetch
 `parameter: chatid`  
-`return: 'groupfetchseuccess' []userid` 
-groupfetch returns every user of a group
+`return: 'chatfetchsuccess' []userid` 
+chatfetch returns every user of a group
 
 # Tables
 
@@ -136,10 +136,11 @@ This table stores the messages written.
 CREATE TABLE chat_messages (
     chat_id bigint,
     bucket int,
+    recipient_id bigint,
     message_id bigint,
     author_id bigint,
     message text,
-    PRIMARY KEY((chat_id, bucket), message_id)
+    PRIMARY KEY((chat_id, bucket, recipient_id), message_id)
 );
 ```
 
